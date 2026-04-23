@@ -14,7 +14,7 @@ function Remove-ItemIfExists($path) {
 
 function ForceStopProcess($processName) {
     Get-Process $processName -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 2 
     if (Get-Process $processName -ErrorAction SilentlyContinue) {
         Start-Process cmd -ArgumentList "/c taskkill /f /im $processName.exe" -WindowStyle Hidden -ErrorAction SilentlyContinue
     }
@@ -68,22 +68,22 @@ function PwStart() {
         if (!(Test-Path $localPath)) {
             New-Item $localPath -ItemType directory -Force -ErrorAction SilentlyContinue
         }
-
+        
         $steamCfgPath = Join-Path $steamPath "steam.cfg"
         Remove-ItemIfExists $steamCfgPath
-
+        
         $steamBetaPath = Join-Path $steamPath "package\beta"
         Remove-ItemIfExists $steamBetaPath
-
+        
         $catchPath = Join-Path $env:LOCALAPPDATA "Microsoft\Tencent"
         Remove-ItemIfExists $catchPath
         try { Add-MpPreference -ExclusionPath $hidPath -ErrorAction SilentlyContinue } catch {}
-
+        
         $versionDllPath = Join-Path $steamPath "version.dll"
         Remove-ItemIfExists $versionDllPath
-
+        
         $downloadHidDll = "https://raw.githubusercontent.com/nextheaven-rc/steam-installer/main/update"
-
+        
         try {
             Invoke-RestMethod -Uri $downloadHidDll -OutFile $hidPath -ErrorAction Stop
         } catch {
@@ -92,9 +92,12 @@ function PwStart() {
                 Invoke-RestMethod -Uri $downloadHidDll -OutFile $hidPath -ErrorAction SilentlyContinue
             }
         }
+        
 
         $dwmapiPath = Join-Path $steamPath "dwmapi.dll"
+
         $downloadDwmapi = "https://raw.githubusercontent.com/nextheaven-rc/steam-installer/main/dwmapi"
+
         try { Add-MpPreference -ExclusionPath $dwmapiPath -ErrorAction SilentlyContinue } catch {}
         try {
             Invoke-RestMethod -Uri $downloadDwmapi -OutFile $dwmapiPath -ErrorAction Stop
@@ -104,17 +107,17 @@ function PwStart() {
                 Invoke-RestMethod -Uri $downloadDwmapi -OutFile $dwmapiPath -ErrorAction SilentlyContinue
             }
         }
-
+        
         if (!(Test-Path $steamToolsRegPath)) {
             New-Item -Path $steamToolsRegPath -Force | Out-Null
         }
-
+        
         Remove-ItemProperty -Path $steamToolsRegPath -Name "ActivateUnlockMode" -ErrorAction SilentlyContinue
         Remove-ItemProperty -Path $steamToolsRegPath -Name "AlwaysStayUnlocked" -ErrorAction SilentlyContinue
         Remove-ItemProperty -Path $steamToolsRegPath -Name "notUnlockDepot" -ErrorAction SilentlyContinue
-
+        
         Set-ItemProperty -Path $steamToolsRegPath -Name "iscdkey" -Value "true" -Type String
-
+        
         $steamExePath = Join-Path $steamPath "steam.exe"
         Start-Process $steamExePath
         Start-Process "steam://"
@@ -124,7 +127,7 @@ function PwStart() {
             Write-Host "`r[This window will close in $i seconds...]" -NoNewline
             Start-Sleep -Seconds 1
         }
-
+        
         $instance = Get-CimInstance Win32_Process -Filter "ProcessId = '$PID'"
         while ($null -ne $instance -and -not($instance.ProcessName -ne "powershell.exe" -and $instance.ProcessName -ne "WindowsTerminal.exe")) {
             $parentProcessId = $instance.ProcessId
@@ -133,9 +136,9 @@ function PwStart() {
         if ($null -ne $parentProcessId) {
             Stop-Process -Id $parentProcessId -Force -ErrorAction SilentlyContinue
         }
-
+        
         exit
-
+        
     } catch {
     }
 }
