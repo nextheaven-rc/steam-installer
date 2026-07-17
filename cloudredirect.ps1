@@ -1,7 +1,7 @@
 # ==============================
 # CloudRedirect Installer
 # ==============================
-$Host.UI.RawUI.WindowTitle = "CloudRedirect Installer | .gg/luatools"
+try { $Host.UI.RawUI.WindowTitle = "CloudRedirect Installer | .gg/luatools" } catch {}
 
 # ===================== LOGGING =====================
 function Log {
@@ -34,22 +34,22 @@ function Find-SteamPath {
         $reg = Get-ItemProperty -Path "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam" -ErrorAction SilentlyContinue
         if ($reg.InstallPath) { $PossiblePaths += $reg.InstallPath }
     } catch {}
-   
+
     try {
         $reg = Get-ItemProperty -Path "HKCU:\Software\Valve\Steam" -ErrorAction SilentlyContinue
         if ($reg.SteamPath) { $PossiblePaths += $reg.SteamPath -replace '\\\\', '\' }
     } catch {}
-   
+
     $DefaultPath = "C:\Program Files (x86)\Steam"
     if (Test-Path $DefaultPath) { $PossiblePaths += $DefaultPath }
-   
+
     $PossiblePaths = $PossiblePaths | Select-Object -Unique | Where-Object { Test-Path $_ }
-   
+
     if ($PossiblePaths.Count -eq 0) {
         Log "ERR" "Steam installation not found. Please install Steam first."
         exit 1
     }
-   
+
     $SteamPath = $PossiblePaths[0]
     Log "OK" "Steam found at: $SteamPath"
     return $SteamPath
@@ -71,7 +71,8 @@ $CliFile = Join-Path $env:TEMP "CloudRedirectCLI.exe"
 $DllFile = Join-Path $env:TEMP "cloud_redirect.dll"
 
 try {
-    $Release = Invoke-RestMethod -Uri $ApiUrl -UseBasicParsing -ErrorAction Stop
+    # TIMEOUT na consulta da API (antes nao tinha -> podia pendurar em rede instavel)
+    $Release = Invoke-RestMethod -Uri $ApiUrl -UseBasicParsing -TimeoutSec 30 -ErrorAction Stop
     Log "LOG" "Latest version: $($Release.tag_name)"
 
     # Download CloudRedirectCLI.exe
@@ -97,12 +98,6 @@ catch {
 }
 
 # ===================== EXECUTE CLI =====================
-for ($i = 5; $i -ge 1; $i--) {
-    Log "INFO" "Starting CloudRedirect Fixer in $i second$(if($i -gt 1){'s'})..." $true
-    Start-Sleep -Seconds 1
-}
-Write-Host ""
-
 Log "INFO" "Running CloudRedirect Fixer..."
 try {
     & $CliFile /stfixer
@@ -147,6 +142,14 @@ if (Test-Path $exe) {
 }
 
 Write-Host ""
-Log "INFO" "Press any key to close this window..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-exit
+
+# So espera tecla quando rodando de forma INTERATIVA (com teclado de verdade).
+# Rodando pelo app (headless / stdin redirecionado), NAO espera: sai limpo com exit 0.
+# Era o $Host.UI.RawUI.ReadKey(...) direto que pendurava o processo pra sempre e
+# fazia o app cair no timeout de 20s achando que "continua em 2o plano".
+if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+    Log "INFO" "Press any key to close this window..."
+    try { $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") } catch {}
+}
+
+exit 0
